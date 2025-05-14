@@ -3,6 +3,8 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Author } from './author.entity';
 import { CreateAuthorDto, UpdateAuthorDto } from './author.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginationResponse } from '../common/interfaces/pagination-response.interface';
 
 @Injectable()
 export class AuthorService {
@@ -11,8 +13,26 @@ export class AuthorService {
     private authorRepository: Repository<Author>,
   ) {}
 
-  async findAll(): Promise<Author[]> {
-    return this.authorRepository.find({ relations: ['books'] });
+  async findAll(paginationDto?: PaginationDto): Promise<PaginationResponse<Author>> {
+    const { page = 0, limit = 10 } = paginationDto || {};
+    
+    const [items, total] = await this.authorRepository.findAndCount({
+      relations: ['books'],
+      skip: page * limit,
+      take: limit,
+    });
+    
+    const totalPages = Math.ceil(total / limit);
+    
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
   }
 
   async findOne(id: string): Promise<Author> {

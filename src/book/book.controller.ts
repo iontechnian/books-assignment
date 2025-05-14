@@ -1,19 +1,43 @@
-import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, ParseUUIDPipe } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Body, Param, HttpCode, ParseUUIDPipe, Query } from '@nestjs/common';
 import { BookService } from './book.service';
 import { Book } from './book.entity';
 import { CreateBookDto, UpdateBookDto } from './book.dto';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginationResponse } from '../common/interfaces/pagination-response.interface';
 
 @ApiTags('books')
 @Controller('books')
 export class BookController {
   constructor(private readonly bookService: BookService) {}
 
-  @ApiOperation({ summary: 'Get all books' })
-  @ApiResponse({ status: 200, description: 'Returns all books.', type: [Book] })
+  @ApiOperation({ summary: 'Get all books with pagination' })
+  @ApiResponse({ 
+    status: 200, 
+    description: 'Returns paginated books.', 
+    schema: {
+      properties: {
+        items: {
+          type: 'array',
+          items: { $ref: '#/components/schemas/Book' }
+        },
+        meta: {
+          type: 'object',
+          properties: {
+            total: { type: 'number' },
+            page: { type: 'number' },
+            limit: { type: 'number' },
+            totalPages: { type: 'number' }
+          }
+        }
+      }
+    }
+  })
+  @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (0-based)' })
+  @ApiQuery({ name: 'limit', required: false, type: Number, description: 'Number of items per page' })
   @Get()
-  async findAll(): Promise<Book[]> {
-    return this.bookService.findAll();
+  async findAll(@Query() paginationDto: PaginationDto): Promise<PaginationResponse<Book>> {
+    return this.bookService.findAll(paginationDto);
   }
 
   @ApiOperation({ summary: 'Get book by ID' })

@@ -17,3 +17,9 @@ npm run seed
 ```bash
 npm run dev
 ```
+This will run the backend on `localhost:3000` by default. You can then access Swagger from `/api`
+
+## Unit Tests
+```bash
+npm run test
+```

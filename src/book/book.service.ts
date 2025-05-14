@@ -4,6 +4,8 @@ import { Repository } from 'typeorm';
 import { Book } from './book.entity';
 import { Author } from '../author/author.entity';
 import { CreateBookDto, UpdateBookDto } from './book.dto';
+import { PaginationDto } from '../common/dto/pagination.dto';
+import { PaginationResponse } from '../common/interfaces/pagination-response.interface';
 
 @Injectable()
 export class BookService {
@@ -14,8 +16,26 @@ export class BookService {
     private authorRepository: Repository<Author>,
   ) {}
 
-  async findAll(): Promise<Book[]> {
-    return this.bookRepository.find({ relations: ['author'] });
+  async findAll(paginationDto?: PaginationDto): Promise<PaginationResponse<Book>> {
+    const { page = 0, limit = 10 } = paginationDto || {};
+    
+    const [items, total] = await this.bookRepository.findAndCount({
+      relations: ['author'],
+      skip: page * limit,
+      take: limit,
+    });
+    
+    const totalPages = Math.ceil(total / limit);
+    
+    return {
+      items,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages,
+      },
+    };
   }
 
   async findOne(id: string): Promise<Book> {
